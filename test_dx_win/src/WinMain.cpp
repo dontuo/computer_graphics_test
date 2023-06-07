@@ -6,6 +6,8 @@ int CALLBACK WinMain(
 	LPSTR lpCmdLine,
 	int nCmdShow
 ) {
+	WNDCLASSEX wc = {0};
 
+	RegisterClassEx(&wc);
 	return 0;
 }
