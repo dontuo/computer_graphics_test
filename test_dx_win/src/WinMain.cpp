@@ -1,8 +1,11 @@
-#include <iostream>
+#include "windows.h"
 
+int CALLBACK WinMain(
+	HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPSTR lpCmdLine,
+	int nCmdShow
+) {
 
-
-int main() {
-	std::cout << "hellow rld!";
 	return 0;
 }
