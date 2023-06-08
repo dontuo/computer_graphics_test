@@ -1,5 +1,5 @@
 #if !defined(WIN32_GRAPHICS_H)
-
+#define WIN32_GRAPHICS_H
 #include <stdint.h>
 #include <stddef.h>
 #include <float.h>
@@ -35,6 +35,8 @@ typedef int32_t b32;
 #define MegaBytes(Val) (KiloBytes(Val)*1024LL)
 #define GigaBytes(Val) (MegaBytes(Val)*1024LL)
 #define TeraBytes(Val) (GigaBytes(Val)*1024LL)
+#include <Windows.h>
+#include "graphics_math.h"
 
 struct global_state
 {
@@ -45,8 +47,8 @@ struct global_state
     u32 FrameBufferHeight;
     u32* FrameBufferPixels;
 
-    f32 CurrOffset;
+    f32 CurrAngle;
 };
 
-#define WIN32_GRAPHICS_H
+
 #endif

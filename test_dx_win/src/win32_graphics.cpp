@@ -1,9 +1,19 @@
 #include <windows.h>
-
+#include <cmath>
+using namespace std;
 #include "win32_graphics.h"
+#include "graphics_math.cpp"
+
 WNDPROC Wndproc;
 
 global global_state GlobalState;
+
+v2 ProjectPoint(v3 Pos) 
+{
+    v2 Result = Pos.xy / Pos.z;
+    Result = 0.5f * (Result + V2(1)) * V2(GlobalState.FrameBufferWidth, GlobalState.FrameBufferHeight);
+    return Result;
+}
 
 LRESULT Win32WindowCallBack(
     HWND WindowHandle,
@@ -36,8 +46,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
     // make a window
     {
-
-
         WNDCLASSA WindowCLass{};
         WindowCLass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
         WindowCLass.lpfnWndProc = Win32WindowCallBack;
@@ -72,8 +80,12 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         RECT ClientRect = {};
         Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
 
-        GlobalState.FrameBufferWidth = ClientRect.right - ClientRect.left;
-        GlobalState.FrameBufferHeight = ClientRect.bottom - ClientRect.top;
+        //GlobalState.FrameBufferWidth = ClientRect.right - ClientRect.left;
+        //GlobalState.FrameBufferHeight = ClientRect.bottom - ClientRect.top;
+
+        GlobalState.FrameBufferWidth = 300;
+        GlobalState.FrameBufferHeight = 300;
+
         GlobalState.FrameBufferPixels = (u32*)malloc(sizeof(u32) *
                                                     GlobalState.FrameBufferWidth
                                                     * GlobalState.FrameBufferHeight);
@@ -108,27 +120,53 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             }
         };
 
-        f32 Speed = 200.f;
-        GlobalState.CurrOffset += Speed * FrameTime;
-
-
+        // NOTE: Встановлюємо 0 до всіх пікселів
         for (u32 Y = 0; Y < GlobalState.FrameBufferHeight; Y++) {
             for (u32 X = 0; X < GlobalState.FrameBufferWidth; X++) {
                 u32 PixelId = Y * GlobalState.FrameBufferWidth + X;
                 
-                u8 Red = (u8)(X - GlobalState.CurrOffset);
-                u8 Green = (u8)Y;
+                u8 Red = 0;
+                u8 Green = 0;
                 u8 Blue = 0;
-                u8 Alpha = 0;
-                u32 PixelColor = ((u32)Alpha << 32) | ((u32)Red << 16) | ((u32)Green << 8) | (u32)Blue;
+                u8 Alpha = 255;
+                u32 PixelColor = ((u32)Alpha << 24) | ((u32)Red << 16) | ((u32)Green << 8) | (u32)Blue;
 
                 GlobalState.FrameBufferPixels[PixelId] = PixelColor; 
             }
              
         }
+
+        for (u32 TriangleId = 0; TriangleId < 10; ++TriangleId)
+        {
+            f32 Depth = powf(2, TriangleId + 1);
+            v3 Points[3] = 
+            {
+            V3(-1.0f, -0.5f, Depth),
+            V3(1.0f, -0.5f, Depth),
+            V3(0.0f, 0.5f, Depth)
+            };
+
+
+            for (u32 PointId = 0; PointId < ArrayCount(Points); ++PointId) 
+            {
+                v3 TransformedPos = Points[PointId] + V3(cosf(GlobalState.CurrAngle), sinf(GlobalState.CurrAngle), 0);
+                v2 PixelPos = ProjectPoint(TransformedPos);
+
+                if (PixelPos.x >= 0.0f && PixelPos.x < GlobalState.FrameBufferWidth &&
+                    PixelPos.y >= 0.0f && PixelPos.y < GlobalState.FrameBufferHeight)
+                {
+                    u32 PixelId = u32(PixelPos.y) * GlobalState.FrameBufferWidth + u32(PixelPos.x);
+                    GlobalState.FrameBufferPixels[PixelId] = 0xFF00FF00;
+                }
+            }
+        }
+
+        GlobalState.CurrAngle += FrameTime;
+        if (GlobalState.CurrAngle >= 2.f * Pi32) {
+            GlobalState.CurrAngle -= 2.0f * Pi32;
+        }
         RECT ClientRect = {};
         Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
-
         u32 ClientWidth = ClientRect.right - ClientRect.left;
         u32 CliendHeight = ClientRect.bottom - ClientRect.top;
 
