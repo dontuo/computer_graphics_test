@@ -21,7 +21,7 @@ f32 CrossProduct2d(v2 A, v2 B)
     f32 Result = A.x * B.y - A.y * B.x;
     return Result;
 
-}
+} 
 
 void DrawTriangle(v3* Points, u32 Color) {
     v2 PointA = ProjectPoint(Points[0]);
@@ -32,6 +32,10 @@ void DrawTriangle(v3* Points, u32 Color) {
     v2 Edge1 = PointC - PointB;
     v2 Edge2 = PointA - PointC;
 
+    b32 IsTopLeft0 = ((Edge0.x >= 0.0f && Edge0.y > 0.0f) || (Edge0.x > 0 && Edge0.y == 0.0f));
+    b32 IsTopLeft1 = ((Edge1.x >= 0.0f && Edge1.y > 0.0f) || (Edge1.x > 0 && Edge1.y == 0.0f));
+    b32 IsTopLeft2 = ((Edge2.x >= 0.0f && Edge2.y > 0.0f) || (Edge2.x > 0 && Edge2.y == 0.0f));
+
     for (u32 Y = 0; Y < GlobalState.FrameBufferHeight; ++Y) 
     {
         for (u32 X = 0; X < GlobalState.FrameBufferWidth; ++X) 
@@ -41,6 +45,14 @@ void DrawTriangle(v3* Points, u32 Color) {
             v2 PixelEdge0 = PixelPoint - PointA; 
             v2 PixelEdge1 = PixelPoint - PointB;
             v2 PixelEdge2 = PixelPoint - PointC;
+
+            f32 CrossLength0 = CrossProduct2d(PixelEdge0, Edge0);
+            f32 CrossLength1 = CrossProduct2d(PixelEdge1, Edge1);
+            f32 CrossLength2 = CrossProduct2d(PixelEdge2, Edge2);
+
+            if ((CrossLength0 > 0.0f || (IsTopLeft0 && CrossLength0 == 0.0f)) &&
+                (CrossLength1 > 0.0f || (IsTopLeft1 && CrossLength1 == 0.0f)) &&
+                (CrossLength2 > 0.0f || (IsTopLeft2 && CrossLength2 == 0.0f)))
 
             if (CrossProduct2d(PixelEdge0, Edge0) >= 0.0f && 
                 CrossProduct2d(PixelEdge1, Edge1) >= 0.0f &&
@@ -122,8 +134,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         //GlobalState.FrameBufferWidth = ClientRect.right - ClientRect.left;
         //GlobalState.FrameBufferHeight = ClientRect.bottom - ClientRect.top;
 
-        GlobalState.FrameBufferWidth = 250;
-        GlobalState.FrameBufferHeight = 250;
+        GlobalState.FrameBufferWidth = 50;
+        GlobalState.FrameBufferHeight = 50;
 
         GlobalState.FrameBufferPixels = (u32*)malloc(sizeof(u32) *
                                                     GlobalState.FrameBufferWidth
@@ -187,6 +199,24 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             0xFF0000FF,
         };
 
+        v3 Points1[] =
+        {
+            V3(-1.0f, -1.0f, 1.0f),
+            V3(-1.0f, 1.0f, 1.0f),
+            V3(1.0f, 1.0f, 1.0f)
+        };
+
+        v3 Points2[] =
+        {
+            V3(1.0f, 1.0f, 1.0f),
+            V3(1.0f, -1.0f, 1.0f),
+            V3(-1.0f, -1.0f, 1.0f),
+        };
+
+        DrawTriangle(Points2, Colors[1]);
+        DrawTriangle(Points1, Colors[0]);
+        
+#if 0
         // NOTE: проектуємо нажі трикутники
         for (i32 TriangleId = 9; TriangleId >= 0; --TriangleId)
         {
@@ -208,7 +238,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
             DrawTriangle(Points, Colors[TriangleId % ArrayCount(Colors)]);
          }
-
+#endif
         RECT ClientRect = {};
         Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
         u32 ClientWidth = ClientRect.right - ClientRect.left;
