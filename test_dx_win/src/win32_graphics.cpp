@@ -12,7 +12,45 @@ v2 ProjectPoint(v3 Pos)
 {
     v2 Result = Pos.xy / Pos.z;
     Result = 0.5f * (Result + V2(1)) * V2(GlobalState.FrameBufferWidth, GlobalState.FrameBufferHeight);
+
     return Result;
+}
+
+f32 CrossProduct2d(v2 A, v2 B) 
+{
+    f32 Result = A.x * B.y - A.y * B.x;
+    return Result;
+
+}
+
+void DrawTriangle(v3* Points, u32 Color) {
+    v2 PointA = ProjectPoint(Points[0]);
+    v2 PointB = ProjectPoint(Points[1]);
+    v2 PointC = ProjectPoint(Points[2]);
+
+    v2 Edge0 = PointB - PointA;
+    v2 Edge1 = PointC - PointB;
+    v2 Edge2 = PointA - PointC;
+
+    for (u32 Y = 0; Y < GlobalState.FrameBufferHeight; ++Y) 
+    {
+        for (u32 X = 0; X < GlobalState.FrameBufferWidth; ++X) 
+        {
+            v2 PixelPoint = V2(X, Y) + V2(0.5f, 0.5f);
+            
+            v2 PixelEdge0 = PixelPoint - PointA; 
+            v2 PixelEdge1 = PixelPoint - PointB;
+            v2 PixelEdge2 = PixelPoint - PointC;
+
+            if (CrossProduct2d(PixelEdge0, Edge0) >= 0.0f && 
+                CrossProduct2d(PixelEdge1, Edge1) >= 0.0f &&
+                CrossProduct2d(PixelEdge2, Edge2) >= 0.0f)
+            {
+                u32 PixelId = Y * GlobalState.FrameBufferWidth + X;
+                GlobalState.FrameBufferPixels[PixelId] = Color;
+            }
+        }
+    }
 }
 
 LRESULT Win32WindowCallBack(
@@ -44,7 +82,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     LARGE_INTEGER TimerFrequency = {};
     Assert(QueryPerformanceFrequency(&TimerFrequency));
 
-    // make a window
+    // register and create window class
     {
         WNDCLASSA WindowCLass{};
         WindowCLass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -55,20 +93,21 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         if (!RegisterClassA(&WindowCLass)) {
             InvalidCodePath;
         }
+
         GlobalState.WindowHandle =
-            CreateWindowExA(
-                0,
-                WindowCLass.lpszClassName,
-                "Graphics learning",
-                WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                CW_USEDEFAULT,
-                CW_USEDEFAULT,
-                1280,
-                720,
-                NULL,
-                NULL,
-                hInstance,
-                NULL);
+                                CreateWindowExA(
+                                    0,
+                                    WindowCLass.lpszClassName,
+                                    "Graphics learning",
+                                    WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                                    CW_USEDEFAULT,
+                                    CW_USEDEFAULT,
+                                    1280,
+                                    720,
+                                    NULL,
+                                    NULL,
+                                    hInstance,
+                                    NULL);
 
         if (!GlobalState.WindowHandle) {
             InvalidCodePath;
@@ -83,8 +122,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         //GlobalState.FrameBufferWidth = ClientRect.right - ClientRect.left;
         //GlobalState.FrameBufferHeight = ClientRect.bottom - ClientRect.top;
 
-        GlobalState.FrameBufferWidth = 300;
-        GlobalState.FrameBufferHeight = 300;
+        GlobalState.FrameBufferWidth = 250;
+        GlobalState.FrameBufferHeight = 250;
 
         GlobalState.FrameBufferPixels = (u32*)malloc(sizeof(u32) *
                                                     GlobalState.FrameBufferWidth
@@ -101,7 +140,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
         f32 FrameTime = f32(EndTime.QuadPart - BeginTime.QuadPart) / f32(TimerFrequency.QuadPart);
         BeginTime = EndTime;
-
 
         MSG Message = {};
         while (PeekMessageA(&Message, GlobalState.WindowHandle, 0, 0, PM_REMOVE)) 
@@ -136,35 +174,41 @@ int APIENTRY WinMain(HINSTANCE hInstance,
              
         }
 
-        for (u32 TriangleId = 0; TriangleId < 10; ++TriangleId)
+        GlobalState.CurrTime = GlobalState.CurrTime + FrameTime;
+        if (GlobalState.CurrTime > 2.0f * 3.14159f)
         {
-            f32 Depth = powf(2, TriangleId + 1);
+            GlobalState.CurrTime -= 2.0f * 3.14159f;
+        }
+
+        u32 Colors[] =
+        {
+            0xFF00FF00,
+            0xFFFF00FF,
+            0xFF0000FF,
+        };
+
+        // NOTE: проектуємо нажі трикутники
+        for (i32 TriangleId = 9; TriangleId >= 0; --TriangleId)
+        {
+            f32 DistToCamera = powf(2, TriangleId + 1);
+            
             v3 Points[3] = 
             {
-            V3(-1.0f, -0.5f, Depth),
-            V3(1.0f, -0.5f, Depth),
-            V3(0.0f, 0.5f, Depth)
+            V3(-1.0f, -0.5f, DistToCamera),
+            V3(0.0f, 0.5f, DistToCamera),
+            V3(1.0f, -0.5f, DistToCamera)
             };
 
-
+            // NOTE: Рухаємо точки трикутника в коло
             for (u32 PointId = 0; PointId < ArrayCount(Points); ++PointId) 
-            {
-                v3 TransformedPos = Points[PointId] + V3(cosf(GlobalState.CurrAngle), sinf(GlobalState.CurrAngle), 0);
-                v2 PixelPos = ProjectPoint(TransformedPos);
-
-                if (PixelPos.x >= 0.0f && PixelPos.x < GlobalState.FrameBufferWidth &&
-                    PixelPos.y >= 0.0f && PixelPos.y < GlobalState.FrameBufferHeight)
-                {
-                    u32 PixelId = u32(PixelPos.y) * GlobalState.FrameBufferWidth + u32(PixelPos.x);
-                    GlobalState.FrameBufferPixels[PixelId] = 0xFF00FF00;
-                }
+            { 
+                v3 ShiftedPoint = Points[PointId] + V3(cosf(GlobalState.CurrTime), sinf(GlobalState.CurrTime), 0);
+                Points[PointId] = ShiftedPoint;
             }
-        }
 
-        GlobalState.CurrAngle += FrameTime;
-        if (GlobalState.CurrAngle >= 2.f * Pi32) {
-            GlobalState.CurrAngle -= 2.0f * Pi32;
-        }
+            DrawTriangle(Points, Colors[TriangleId % ArrayCount(Colors)]);
+         }
+
         RECT ClientRect = {};
         Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
         u32 ClientWidth = ClientRect.right - ClientRect.left;
