@@ -18,6 +18,10 @@ union v3
 	{
 		f32 x, y, z;
 	};
+	struct
+	{
+		f32 r, g, b;
+	};
 	struct 
 	{
 		v2 xy; 

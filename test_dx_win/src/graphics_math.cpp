@@ -39,12 +39,21 @@ inline v2 operator-(v2 A, v2 B) {
 	return Result;
 }
 
+inline v2 operator-(v2 A) {
+	v2 Result = {};
+	Result.x = -A.x;
+	Result.y = -A.y;
+	return Result;
+}
+
 inline v2 operator*(f32 A, v2 B) {
 	v2 Result = {};
 	Result.x = A * B.x;
 	Result.y = A * B.y;
 	return Result;
 }
+
+
 inline v2 operator*(v2 A, v2 B) {
 	v2 Result = {};
 	Result.x = A.x * B.x;
@@ -66,5 +75,29 @@ inline v3 operator+(v3 a, v3 b) {
 	Result.x = a.x + b.x;
 	Result.y = a.y + b.y;
 	Result.z = a.z + b.z;
+	return Result;
+}
+
+inline v3 operator*(v3 a, v3 b) {
+	v3 Result = {};
+	Result.x = a.x * b.x;
+	Result.y = a.y * b.y;
+	Result.z = a.z * b.z;
+	return Result;
+}
+
+inline v3 operator*(f32 a, v3 b) {
+	v3 Result = {};
+	Result.x = a * b.x;
+	Result.y = a * b.y;
+	Result.z = a * b.z;
+	return Result;
+}
+
+inline v3 operator*(v3 b, f32 a) {
+	v3 Result = {};
+	Result.x = a * b.x;
+	Result.y = a * b.y;
+	Result.z = a * b.z;
 	return Result;
 }
