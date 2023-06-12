@@ -48,6 +48,8 @@ struct global_state
     u32* FrameBufferPixels;
     f32* DepthBuffer;
     f32 CurrTime;
+
+
 };
 
 

@@ -9,36 +9,41 @@ WNDPROC Wndproc;
 global global_state GlobalState;
 
 v2 ProjectPoint(v3 Pos) 
-{
+{{
     v2 Result = Pos.xy / Pos.z;
     Result = 0.5f * (Result + V2(1)) * V2(GlobalState.FrameBufferWidth, GlobalState.FrameBufferHeight);
 
     return Result;
-}
+}}
 
 f32 CrossProduct2d(v2 A, v2 B) 
 {
     f32 Result = A.x * B.y - A.y * B.x;
     return Result;
 
-} 
+}
 
-void DrawTriangle(v3* Points, v3* Colors) {
-    v2 PointA = ProjectPoint(Points[0]);
-    v2 PointB = ProjectPoint(Points[1]);
-    v2 PointC = ProjectPoint(Points[2]);
+void DrawTriangle(v3 ModelVertex0, v3 ModelVertex1, v3 ModelVertex2,
+    v3 ModelColor0, v3 ModelColor1, v3 ModelColor2,
+    m4 Transform)
+{
+    v3 TransformedPoint0 = (Transform * V4(ModelVertex0, 1.0f)).xyz;
+    v3 TransformedPoint1 = (Transform * V4(ModelVertex1, 1.0f)).xyz;
+    v3 TransformedPoint2 = (Transform * V4(ModelVertex2, 1.0f)).xyz;
+
+    v2 PointA = ProjectPoint(TransformedPoint0);
+    v2 PointB = ProjectPoint(TransformedPoint1);
+    v2 PointC = ProjectPoint(TransformedPoint2);
 
     i32 MinX = min(min((i32)PointA.x, (i32)PointB.x), (i32)PointC.x);
-    i32 MinY = min(min((i32)PointA.y, (i32)PointB.y), (i32)PointC.y);
-
     i32 MaxX = max(max((i32)round(PointA.x), (i32)round(PointB.x)), (i32)round(PointC.x));
+    i32 MinY = min(min((i32)PointA.y, (i32)PointB.y), (i32)PointC.y);
     i32 MaxY = max(max((i32)round(PointA.y), (i32)round(PointB.y)), (i32)round(PointC.y));
 
     MinX = max(0, MinX);
     MinX = min(GlobalState.FrameBufferWidth - 1, MinX);
     MaxX = max(0, MaxX);
     MaxX = min(GlobalState.FrameBufferWidth - 1, MaxX);
-
     MinY = max(0, MinY);
     MinY = min(GlobalState.FrameBufferHeight - 1, MinY);
     MaxY = max(0, MaxY);
@@ -48,22 +53,19 @@ void DrawTriangle(v3* Points, v3* Colors) {
     v2 Edge1 = PointC - PointB;
     v2 Edge2 = PointA - PointC;
 
-    b32 IsTopLeft0 = ((Edge0.x >= 0.0f && Edge0.y > 0.0f) || (Edge0.x > 0 && Edge0.y == 0.0f));
-    b32 IsTopLeft1 = ((Edge1.x >= 0.0f && Edge1.y > 0.0f) || (Edge1.x > 0 && Edge1.y == 0.0f));
-    b32 IsTopLeft2 = ((Edge2.x >= 0.0f && Edge2.y > 0.0f) || (Edge2.x > 0 && Edge2.y == 0.0f));
+    b32 IsTopLeft0 = (Edge0.x >= 0.0f && Edge0.y > 0.0f) || (Edge0.x > 0.0f && Edge0.y == 0.0f);
+    b32 IsTopLeft1 = (Edge1.x >= 0.0f && Edge1.y > 0.0f) || (Edge1.x > 0.0f && Edge1.y == 0.0f);
+    b32 IsTopLeft2 = (Edge2.x >= 0.0f && Edge2.y > 0.0f) || (Edge2.x > 0.0f && Edge2.y == 0.0f);
 
     f32 BaryCentricDiv = CrossProduct2d(PointB - PointA, PointC - PointA);
 
-
-
-    for (i32 Y = MinY; Y <= MaxY; ++Y) 
+    for (i32 Y = MinY; Y <= MaxY; ++Y)
     {
-        for (i32 X = MinX; X <= MaxX; ++X) 
+        for (i32 X = MinX; X <= MaxX; ++X)
         {
-            if (X < -1.0f) { continue; }
             v2 PixelPoint = V2(X, Y) + V2(0.5f, 0.5f);
-            
-            v2 PixelEdge0 = PixelPoint - PointA; 
+
+            v2 PixelEdge0 = PixelPoint - PointA;
             v2 PixelEdge1 = PixelPoint - PointB;
             v2 PixelEdge2 = PixelPoint - PointC;
 
@@ -74,28 +76,24 @@ void DrawTriangle(v3* Points, v3* Colors) {
             if ((CrossLength0 > 0.0f || (IsTopLeft0 && CrossLength0 == 0.0f)) &&
                 (CrossLength1 > 0.0f || (IsTopLeft1 && CrossLength1 == 0.0f)) &&
                 (CrossLength2 > 0.0f || (IsTopLeft2 && CrossLength2 == 0.0f)))
-
-            if (CrossProduct2d(PixelEdge0, Edge0) >= 0.0f && 
-                CrossProduct2d(PixelEdge1, Edge1) >= 0.0f &&
-                CrossProduct2d(PixelEdge2, Edge2) >= 0.0f)
             {
-                
+                // NOTE: Ми у середині трикутника
                 u32 PixelId = Y * GlobalState.FrameBufferWidth + X;
 
-                f32 T0 = -(CrossLength1 / BaryCentricDiv);
-                f32 T1 = -(CrossLength2 / BaryCentricDiv);
-                f32 T2 = -(CrossLength0 / BaryCentricDiv);
+                f32 T0 = -CrossLength1 / BaryCentricDiv;
+                f32 T1 = -CrossLength2 / BaryCentricDiv;
+                f32 T2 = -CrossLength0 / BaryCentricDiv;
 
-                f32 Depth = T0 * (1.f / Points[0].z) + T1 * (1.f / Points[1].z) + T2 * (1.f / Points[2].z);
-                Depth = 1.f / Depth;
+                f32 Depth = T0 * (1.0f / TransformedPoint0.z) + T1 * (1.0f / TransformedPoint1.z) + T2 * (1.0f / TransformedPoint2.z);
+                Depth = 1.0f / Depth;
                 if (Depth < GlobalState.DepthBuffer[PixelId])
                 {
-                    v3 FinalColor = T0 * Colors[0] + T1 * Colors[1] + T2 * Colors[2];
-                    FinalColor = FinalColor * 255.f;
-                    u32 FinalColorU32 = ((u32)0xff << 24) | ((u32)FinalColor.r << 16) | ((u32)FinalColor.g << 8) | (u32)FinalColor.b;
+                    v3 FinalColor = T0 * ModelColor0 + T1 * ModelColor1 + T2 * ModelColor2;
+                    FinalColor = FinalColor * 255.0f;
+                    u32 FinalColorU32 = ((u32)0xFF << 24) | ((u32)FinalColor.r << 16) | ((u32)FinalColor.g << 8) | (u32)FinalColor.b;
 
-                    GlobalState.DepthBuffer[PixelId] = Depth;
                     GlobalState.FrameBufferPixels[PixelId] = FinalColorU32;
+                    GlobalState.DepthBuffer[PixelId] = Depth;
                 }
             }
         }
@@ -233,65 +231,87 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             GlobalState.CurrTime -= 2.0f * 3.14159f;
         }
 
-        v3 Colors1[] =
+        v3 ModelVertices[] =
+        {
+            // NOTE: Front Face
+            V3(-0.5f, -0.5f, -0.5f),
+            V3(-0.5f, 0.5f, -0.5f),
+            V3(0.5f, 0.5f, -0.5f),
+            V3(0.5f, -0.5f, -0.5f),
+
+            // NOTE: Back Face
+            V3(-0.5f, -0.5f, 0.5f),
+            V3(-0.5f, 0.5f, 0.5f),
+            V3(0.5f, 0.5f, 0.5f),
+            V3(0.5f, -0.5f, 0.5f),
+        };
+
+
+        v3 ModelColors[] =
         {
             V3(1, 0, 0),
             V3(0, 1, 0),
             V3(0, 0, 1),
-        };
+            V3(1, 0, 1),
 
-        v3 Positions1[] =
-        {
-            V3(0.f, 0.5f, 1.0f),
-            V3(0.5f, -0.5f, 1.0f),
-            V3(-0.5f, -0.5f, 1.0f),
+            V3(1, 1, 0),
+            V3(0, 1, 1),
+            V3(1, 0, 1),
+            V3(1, 1, 1),
         };
 
         v3 Colors2[] =
         {
-            V3(1, 0, 1),
+            V3(1, 0, 0),
             V3(0, 1, 0),
+            V3(0, 0, 1),
+            V3(0, 0, 1),
+
+            V3(1, 1, 0),
+            V3(0, 1, 1),
             V3(1, 0, 1),
+            V3(1, 1, 1),
         };
 
-        v3 Positions2[] =
+        u32 ModelIndinces[] =
         {
-            V3(0.f, 0.5f, 1.0f),
-            V3(0.5f, -0.5f, 1.2f),
-            V3(-0.5f, -0.5f, 0.8f),
+            // NOTE: Front Face
+             0, 1, 2,
+            2, 3, 0,
+
+            // NOTE: Back Face
+            6, 5, 4,
+            4, 7, 6,
+
+            // NOTE: Left face
+            4, 5, 1,
+            1, 0, 4,
+
+            // NOTE: Right face
+            3, 2, 6,
+            6, 7, 3,
+
+            // NOTE: Top face
+            1, 5, 6,
+            6, 2, 1,
+
+            // NOTE: Bottom face
+            4, 0, 3,
+            3, 7, 4,
         };
-        v3 Position3[] = {
-            V3(0.f, -0.5f, 0.6f),
-            V3(-1.5f, 0.5f, 3.0f),
-            V3(1.5f, 0.5f, 3.0f),
-        };
-        DrawTriangle(Positions1, Colors1);
-        DrawTriangle(Positions2, Colors2);
-        DrawTriangle(Position3, Colors1);
+        f32 Offset = abs(sin(GlobalState.CurrTime));
+        m4 Transform = (TranslationMatrix(0, 0, 2) *
+            RotationMatrix(GlobalState.CurrTime, GlobalState.CurrTime, GlobalState.CurrTime) *
+            ScaleMatrix(1, 1, 1));
 
-#if 0
-        // NOTE: проектуємо нажі трикутники
-        for (i32 TriangleId = 0; TriangleId < 10; ++TriangleId)
-        {
-            f32 DistToCamera = powf(2, TriangleId + 1);
-            
-            v3 Points[3] = 
-            {
-            V3(-1.0f, -0.5f, DistToCamera),
-            V3(0.0f, 0.5f, DistToCamera),
-            V3(1.0f, -0.5f, DistToCamera)
-            };
+        for (u32 IndexId = 0; IndexId < ArrayCount(ModelIndinces); IndexId += 3) {
+            u32 Index0 = ModelIndinces[IndexId + 0];
+            u32 Index1 = ModelIndinces[IndexId + 1];
+            u32 Index2 = ModelIndinces[IndexId + 2];
 
-            // NOTE: Рухаємо точки трикутника в коло
-            for (u32 PointId = 0; PointId < ArrayCount(Points); ++PointId) 
-            { 
-                v3 ShiftedPoint = Points[PointId] + V3(cosf(GlobalState.CurrTime), sinf(GlobalState.CurrTime), 0);
-                Points[PointId] = ShiftedPoint;
-            }
-
-            DrawTriangle(Points, Colors);
-         }
-#endif
+            DrawTriangle(ModelVertices[Index0], ModelVertices[Index1], ModelVertices[Index2],
+                ModelColors[Index0], ModelColors[Index1], ModelColors[Index2], Transform);
+        }
         RECT ClientRect = {};
         Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
         u32 ClientWidth = ClientRect.right - ClientRect.left;
