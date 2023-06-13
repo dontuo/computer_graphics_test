@@ -38,6 +38,16 @@ typedef int32_t b32;
 #include <Windows.h>
 #include "graphics_math.h"
 
+struct camera
+{
+    b32 PrevMouseDown;
+    v3 Pos;
+    v2 PrevMousePos;
+
+    f32 Yaw;
+    f32 Pitch;
+};
+
 struct global_state
 {
     b32 IsRunning;
@@ -49,6 +59,12 @@ struct global_state
     f32* DepthBuffer;
     f32 CurrTime;
 
+    camera Camera;
+
+    b32 WDown;
+    b32 ADown;
+    b32 SDown;
+    b32 DDown;
 
 };
 
