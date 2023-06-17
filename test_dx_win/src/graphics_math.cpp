@@ -11,6 +11,20 @@ inline v2 V2(f32 Arg) {
 	return Result;
 }
 
+inline v2i V2I(f32 X, f32 Y) {
+	v2i Result = {};
+	Result.x = X;
+	Result.y = Y;
+	return Result;
+}
+
+inline v2i operator+(v2i A, v2i B) {
+	v2i Result = {};
+	Result.x = A.x + B.x;
+	Result.y = A.y + B.y;
+	return Result;
+}
+
 inline v3 V3(f32 x, f32 y, f32 z) {
 	v3 Result;
 	Result.x = x;
@@ -69,6 +83,11 @@ inline v2 operator/(v2 A, f32 B) {
 	return Result;
 }
 
+inline v2 operator/= (v2 &A, f32 B) {
+	A = A / B;
+	return A;
+}
+
 
 //v3 TransformedPos = Points[PointId] + V3(cosf(GlobalState.CurrAngle), sinf(GlobalState.CurrAngle), 0);
 
@@ -115,6 +134,19 @@ inline v3 operator*(v3 a, v3 b) {
 	return Result;
 }
 
+inline v3 operator*(v3 a, f32 b) {
+	v3 Result = {};
+	Result.x = a.x * b;
+	Result.y = a.y * b;
+	Result.z = a.z * b;
+	return Result;
+}
+
+inline v3 operator*=(v3 &a, f32 b) {
+	a = a * b;
+	return a;
+}
+
 inline v3 operator*(f32 a, v3 b) {
 	v3 Result = {};
 	Result.x = a * b.x;
@@ -123,13 +155,7 @@ inline v3 operator*(f32 a, v3 b) {
 	return Result;
 }
 
-inline v3 operator*(v3 b, f32 a) {
-	v3 Result = {};
-	Result.x = a * b.x;
-	Result.y = a * b.y;
-	Result.z = a * b.z;
-	return Result;
-}
+
 
 inline v3 operator/(v3 b, f32 a) {
 	v3 Result = {};
@@ -139,10 +165,21 @@ inline v3 operator/(v3 b, f32 a) {
 	return Result;
 }
 
+inline v3 operator/=(v3& a, f32 b) {
+	a = a / b;
+	return a;
+}
+
 inline v3 Normalize(v3 A)
 {
 	f32 Lenght = sqrt(A.x * A.x + A.y * A.y + A.z * A.z);
 	v3 Result = A / Lenght;
+	return Result;
+}
+
+inline v3 Lerp(v3 A, v3 B, f32 T)
+{
+	v3 Result = (1.0f - T) * A + T * B;
 	return Result;
 }
 

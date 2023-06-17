@@ -12,6 +12,17 @@ union v2
     f32 e[2];
 };
 
+union v2i
+{
+    struct
+    {
+        i32 x, y;
+    };
+
+    i32 e[2];
+};
+
+
 union v3
 {
     struct
@@ -71,4 +82,18 @@ union m4
     v4 v[4];
     f32 e[16];
 };
+
+inline m4 PerspectiveMatrix(f32 Fov, f32 AspectRatio, f32 NearZ, f32 FarZ) 
+{
+    // NOTE: ми очікуємо, що градуси в радіанах
+    m4 Result = {};
+
+    f32 FovRadians = (Fov / 360.f) * 2.0f * Pi32;
+    Result.v[0].x = 1.0f / (AspectRatio * tan(FovRadians * 0.5f));
+    Result.v[1].y = 1.0f / tan(FovRadians * 0.5f);
+    Result.v[2].z = -FarZ / (NearZ - FarZ);
+    Result.v[3].z = NearZ * FarZ / (NearZ - FarZ);
+    Result.v[2].w =1.0f;
+    return Result;
+}
 #endif
