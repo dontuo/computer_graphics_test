@@ -1,5 +1,4 @@
-typedef float f32;
-
+#pragma once
 #include <cmath>
 using namespace std;
 #include "win32_graphics.h"
@@ -226,6 +225,18 @@ inline v4 operator+ (v4 A, f32 B)
 }
 
 inline v4 operator* (v4 A, f32 B)
+{
+	v4 Result = {};
+
+	Result.x = A.x * B;
+	Result.y = A.y * B;
+	Result.z = A.z * B;
+	Result.w = A.w * B;
+
+	return Result;
+}
+
+inline v4 operator* (f32 B, v4 A)
 {
 	v4 Result = {};
 

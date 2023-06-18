@@ -1,6 +1,6 @@
-#ifndef GRAPHICS_MATH_CP
+#ifndef GRAPHICS_MATH_H
 #define GRAPHICS_MATH_H
-
+#include <cmath>
 global f32 Pi32 = 3.141596f;
 union v2
 {
