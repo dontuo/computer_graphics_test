@@ -3,6 +3,12 @@
 using namespace std;
 #include "win32_graphics.h"
 
+inline i64 Sign(i64 X)
+{
+	i64 Result = (X > 0) - (X < 0);
+	return Result;
+}
+
 inline v2 V2(f32 Arg) {
 	v2 Result = {};
 	Result.x = Arg;
@@ -17,10 +23,31 @@ inline v2i V2I(f32 X, f32 Y) {
 	return Result;
 }
 
+inline v2i V2I(v2 X) {
+	v2i Result = {};
+	Result.x = (i32)X.x;
+	Result.y = (i32)X.y;
+	return Result;
+}
+
+inline v2i V2I_F24_8(v2 X) {
+	v2i Result = {};
+	Result.x = (i32)round(X.x * 256.f);
+	Result.y = (i32)round(X.y * 256.f);
+	return Result;
+}
+
 inline v2i operator+(v2i A, v2i B) {
 	v2i Result = {};
 	Result.x = A.x + B.x;
 	Result.y = A.y + B.y;
+	return Result;
+}
+
+inline v2i operator-(v2i A, v2i B) {
+	v2i Result = {};
+	Result.x = A.x - B.x;
+	Result.y = A.y - B.y;
 	return Result;
 }
 
